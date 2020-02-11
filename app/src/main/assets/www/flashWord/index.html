@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <!-- Fonts Form Google Font ::- http://www.googlefonts.cn/english  -::  -->
+    <link
+            href="https://fonts.font.im/css?family=Cabin+Sketch "
+            rel="stylesheet"
+    />
+    <!-- End Fonts  -->
+
+    <!-- flashword 所需js -->
+    <script type="text/javascript" src="js/charming.min.js"></script>
+    <script type="text/javascript" src="js/TweenMax.min.js"></script>
+    <style>
+
+	body{
+	margin:0;
+  overflow:hidden;
+
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+	}
+	#flashword{
+	position:fixed;
+	top:0;
+	margin:auto;left:0; right:0;
+	}
+.content {
+  width: 100%;
+  height: 100%;
+}
+.content__title {
+  width: 100%;
+  height: 100%;
+  font-family: "Cabin Sketch", cursive;
+text-align:center;
+  font-size: 4em;
+}
+
+
+
+
+    </style>
+</head>
+<body>
+<noscript>
+    <strong
+    >We're sorry but dummy-vue doesn't work properly without JavaScript
+        enabled. Please enable it to continue.</strong
+    >
+</noscript>
+<div id="flashword">
+    <div class="content">
+        <h2 class="content__title">D u m m y</h2>
+    </div>
+    <div class="overlay"></div>
+</div>
+<!-- built files will be auto injected -->
+</body>
+<script>
+  const getRandomNumber = (min, max) => Math.random() * (max - min) + min;
+
+    animateTitles();
+
+    function getRandomColor() {
+      return (
+        "#" +
+        ("fffff" + ((Math.random() * 16777215 + 0.5) >> 0).toString(16)).slice(
+          -6
+        )
+      );
+    }
+
+    function animateTitles() {
+      const overlay = document.querySelector(".overlay");
+      const title = document.querySelector(".content__title");
+      charming(title);
+      const titleLetters = Array.from(title.querySelectorAll("span"));
+
+      TweenMax.to(overlay, 2, {
+        ease: Quad.easeOut,
+        opacity: 0
+      });
+
+      TweenMax.set(titleLetters, { opacity: 0 });
+      TweenMax.staggerTo(
+        titleLetters,
+        1.5,
+        {
+          ease: Expo.easeOut,
+          startAt: { rotationX: -100, z: -1000 },
+          opacity: 1,
+          rotationX: 0,
+          z: 0
+        },
+        0.1
+      );
+
+      const glitch = (el, cycles) => {
+        if (cycles === 0 || cycles > 3) return;
+        TweenMax.set(el, {
+          x: getRandomNumber(-20, 20),
+          y: getRandomNumber(-20, 20),
+          color: [getRandomColor(), getRandomColor(), getRandomColor()][
+            cycles - 1
+          ]
+        });
+        let timeout = setTimeout(() => {
+          TweenMax.set(el, { x: 0, y: 0, color: "#000" });
+          glitch(el, cycles - 1);
+        }, getRandomNumber(20, 100));
+      };
+
+      const loop = startAt => {
+        let timeout = setTimeout(() => {
+          const titleLettersShuffled = titleLetters.sort(
+            (a, b) => 0.5 - Math.random()
+          );
+          const lettersSet = titleLettersShuffled.slice(
+            0,
+            getRandomNumber(1, titleLetters.length + 1)
+          );
+          for (let i = 0, len = lettersSet.length; i < len - 1; ++i) {
+            glitch(lettersSet[i], 3);
+          }
+          loop();
+        }, startAt || getRandomNumber(500, 3000));
+      };
+      loop(1500);
+    }
+
+
+
+
+</script>
+</html>

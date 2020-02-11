@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Dummy</string>
+    <string name="action_settings">Settings</string>
+
+
+    <!-- Remove or change this placeholder text -->
+    <string name="on_internet_msg">No internet connection! Please check internet.</string>
+    <string name="menu_search">Search</string>
+    <string name="register_success_popup">Registered successfully.\nVerification email has been sent.\nPlease verify email.</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+</resources>

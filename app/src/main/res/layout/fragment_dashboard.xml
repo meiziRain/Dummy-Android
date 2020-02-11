@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<!--    <com.tuesda.walker.circlerefresh.CircleRefreshLayout xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--        android:id="@+id/refresh_layout"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        app:AniBackColor="#E0DFDF"-->
+<!--        app:AniForeColor="#FFFFFF"-->
+<!--        app:CircleSmaller="6">-->
+
+        <com.baoyz.swipemenulistview.SwipeMenuListView
+            android:id="@+id/listView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#ffffff"
+            android:dividerHeight="0dp"
+
+
+            />
+<!--    </com.tuesda.walker.circlerefresh.CircleRefreshLayout>-->
+</LinearLayout>
