@@ -7,8 +7,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,8 +19,31 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Toast;
 
+import com.baoyz.swipemenulistview.SwipeMenuListView;
+import com.baoyz.swipemenulistview.SwipeMenuView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.meizi.dummy.ui.conversation.ConversationFragment;
+import com.meizi.dummy.ui.conversation.base.ConversationRefreshListener;
+import com.meizi.dummy.ui.conversation.base.GetFragmentListener;
+import com.tencent.imsdk.TIMCallBack;
+import com.tencent.imsdk.TIMConnListener;
+import com.tencent.imsdk.TIMConversation;
+import com.tencent.imsdk.TIMElem;
+import com.tencent.imsdk.TIMElemType;
+import com.tencent.imsdk.TIMGroupEventListener;
+import com.tencent.imsdk.TIMGroupTipsElem;
+import com.tencent.imsdk.TIMLogLevel;
+import com.tencent.imsdk.TIMManager;
+import com.tencent.imsdk.TIMMessage;
+import com.tencent.imsdk.TIMRefreshListener;
+import com.tencent.imsdk.TIMSdkConfig;
+import com.tencent.imsdk.TIMSoundElem;
+import com.tencent.imsdk.TIMTextElem;
+import com.tencent.imsdk.TIMUserConfig;
+import com.tencent.imsdk.TIMUserStatusListener;
+import com.tencent.imsdk.session.SessionWrapper;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,17 +51,35 @@ import java.util.List;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import cn.hutool.core.codec.Base64;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements GetFragmentListener {
+
+
+    private String activity_tag = "MainActivity:";
+    private static final String TIM_TAG = "TIM:";
+    private static final int REQUEST_SIGNUP = 0;
+
+
+    /**
+     * 腾讯云 SDKAppId，需要替换为您自己账号下的 SDKAppId。
+     * <p>
+     * 进入腾讯云云通信[控制台](https://console.cloud.tencent.com/avc ) 创建应用，即可看到 SDKAppId，
+     * 它是腾讯云用于区分客户的唯一标识。
+     */
+    public static final int SDKAPPID = 1400295156;
+
+    private ConversationRefreshListener conversationRefreshListener;
+    private ConversationFragment conversationFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
 
         // ActionBar背景颜色
         ColorDrawable drawable = new ColorDrawable(Color.WHITE);
@@ -45,85 +89,123 @@ public class MainActivity extends AppCompatActivity {
         //  但是不知道怎么解决原生BottomNavigationView与设置NoActionBar的闪退Bug
         //  所以此处直接隐藏ActionBar
 //        getSupportActionBar().hide();
-        setContentView(R.layout.activity_main);
-
-
-        BottomNavigationView navView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications)
-                .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        NavigationUI.setupWithNavController(navView, navController);
 
 
 
-        judgePermission();
-        // 判断是否已经登录过
-        SharedPreferences sharedPreferences= getSharedPreferences("user", Context.MODE_PRIVATE);
-        Boolean rememberMe=sharedPreferences.getBoolean("rememberMe",false);
-        if (!rememberMe){
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
+
+        // 腾讯IM SDK 初始化
+        if (SessionWrapper.isMainProcess(getApplicationContext())) {
+            initIM(getApplicationContext());
         }
 
+        // 判断是否已经登录过
+        SharedPreferences sharedPreferences = getSharedPreferences("user", Context.MODE_PRIVATE);
+        Boolean rememberMe = sharedPreferences.getBoolean("rememberMe", false);
+        if (!rememberMe) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        } else {
+            String email = sharedPreferences.getString("email", "");
+            String sig = sharedPreferences.getString("sig", "");
+            TIMManager.getInstance().login(email, Base64.decodeStr(sig), new TIMCallBack() {
+                @Override
+                public void onError(int code, String desc) {
+                    // 错误码 code 和错误描述 desc，可用于定位请求失败原因
+                    // 错误码 code 列表请参见错误码表
+                    Log.d(activity_tag, "TIM登录失败. code: " + code + " errorMsg: " + desc);
+                }
 
+                @Override
+                public void onSuccess() {
+                    Log.d(activity_tag, "TIM登录成功!");
+                    Log.d(activity_tag, "get数据!");
+                    Log.d(activity_tag, "get完成数据!");
+                    setContentView(R.layout.activity_main);
+                    BottomNavigationView navView = findViewById(R.id.nav_view);
+                    // Passing each menu ID as a set of Ids because each
+                    // menu should be considered as top level destinations.
+                    AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
+                            R.id.navigation_conversation, R.id.navigation_contact, R.id.navigation_notifications)
+                            .build();
+                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment);
+                    NavigationUI.setupActionBarWithNavController(MainActivity.this, navController, appBarConfiguration);
+                    NavigationUI.setupWithNavController(navView, navController);
+                }
+            });
+        }
+    }
+
+    private void initIM(Context context) {
+        TIMSdkConfig sdkConfig = new TIMSdkConfig(SDKAPPID);
+        //初始化 SDK
+        TIMManager.getInstance().init(context, sdkConfig);
+        //基本用户配置
+        TIMUserConfig userConfig = new TIMUserConfig()
+                //设置用户状态变更事件监听器
+                .setUserStatusListener(new TIMUserStatusListener() {
+                    @Override
+                    public void onForceOffline() {
+                        //被其他终端踢下线
+                        Log.i(TIM_TAG, "onForceOffline");
+                    }
+
+                    @Override
+                    public void onUserSigExpired() {
+                        //用户签名过期了，需要刷新 userSig 重新登录 IM SDK
+                        Log.i(TIM_TAG, "onUserSigExpired");
+                    }
+                })
+                //设置连接状态事件监听器
+                .setConnectionListener(new TIMConnListener() {
+                    @Override
+                    public void onConnected() {
+                        Log.i(TIM_TAG, "onConnected");
+                    }
+
+                    @Override
+                    public void onDisconnected(int code, String desc) {
+                        Log.i(TIM_TAG, "onDisconnected");
+                    }
+
+                    @Override
+                    public void onWifiNeedAuth(String name) {
+                        Log.i(TIM_TAG, "onWifiNeedAuth");
+                    }
+                })
+                //设置群组事件监听器
+                .setGroupEventListener(new TIMGroupEventListener() {
+                    @Override
+                    public void onGroupTipsEvent(TIMGroupTipsElem elem) {
+                        Log.i(TIM_TAG, "onGroupTipsEvent, type: " + elem.getTipsType());
+                    }
+                })
+                //设置会话刷新监听器
+                .setRefreshListener(new TIMRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        Log.i(TIM_TAG, "onRefresh");
+                        Log.d(activity_tag, "onRefresh--->");
+                    }
+
+                    @Override
+                    public void onRefreshConversation(List<TIMConversation> conversations) {
+                        if (null != conversationFragment) {
+                            conversationFragment.refreshConversationList();
+                        }
+                    }
+                });
+
+        //禁用本地所有存储
+//        userConfig.disableStorage();
+        //开启消息已读回执
+        userConfig.enableReadReceipt(true);
+        //将用户配置与通讯管理器进行绑定
+        TIMManager.getInstance().setUserConfig(userConfig);
 
     }
 
-
-    //6.0之后要动态获取权限，重要！！！
-    protected void judgePermission() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // 检查该权限是否已经获取
-            // 权限是否已经 授权 GRANTED---授权  DINIED---拒绝
-
-            // sd卡权限
-            String[] SdCardPermission = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            if (ContextCompat.checkSelfPermission(this, SdCardPermission[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, SdCardPermission, 100);
-            }
-
-            //手机状态权限
-            String[] readPhoneStatePermission = {Manifest.permission.READ_PHONE_STATE};
-            if (ContextCompat.checkSelfPermission(this, readPhoneStatePermission[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, readPhoneStatePermission, 200);
-            }
-
-            //定位权限
-            String[] locationPermission = {Manifest.permission.ACCESS_FINE_LOCATION};
-            if (ContextCompat.checkSelfPermission(this, locationPermission[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, locationPermission, 300);
-            }
-
-            String[] ACCESS_COARSE_LOCATION = {Manifest.permission.ACCESS_COARSE_LOCATION};
-            if (ContextCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, ACCESS_COARSE_LOCATION, 400);
-            }
-
-
-            String[] READ_EXTERNAL_STORAGE = {Manifest.permission.READ_EXTERNAL_STORAGE};
-            if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, READ_EXTERNAL_STORAGE, 500);
-            }
-
-            String[] WRITE_EXTERNAL_STORAGE = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            if (ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE[0]) != PackageManager.PERMISSION_GRANTED) {
-                // 如果没有授予该权限，就去提示用户请求
-                ActivityCompat.requestPermissions(this, WRITE_EXTERNAL_STORAGE, 600);
-            }
-
-        }else{
-            //doSdCardResult();
-        }
-        //LocationClient.reStart();
+    @Override
+    public void sendValue(ConversationFragment cf) {
+        conversationFragment = cf;
     }
 }

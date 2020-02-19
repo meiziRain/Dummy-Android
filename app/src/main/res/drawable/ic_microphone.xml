@@ -1,0 +1,7 @@
+<vector android:height="48dp" android:viewportHeight="448"
+    android:viewportWidth="448" android:width="48dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#FF000000" android:pathData="m224,248c13.254,0 24,-10.746 24,-24v-120c0,-13.254 -10.746,-24 -24,-24s-24,10.746 -24,24v120c0,13.254 10.746,24 24,24zM224,248"/>
+    <path android:fillColor="#FF000000" android:pathData="m224,0c-123.711,0 -224,100.289 -224,224s100.289,224 224,224 224,-100.289 224,-224c-0.141,-123.652 -100.348,-223.859 -224,-224zM184,104c0,-22.09 17.91,-40 40,-40s40,17.91 40,40v120c0,22.09 -17.91,40 -40,40s-40,-17.91 -40,-40zM232,311.594v72.406h40v16h-96v-16h40v-72.406c-45.277,-4.172 -79.941,-42.125 -80,-87.594h16c0,39.766 32.234,72 72,72s72,-32.234 72,-72h16c-0.059,45.469 -34.723,83.422 -80,87.594zM232,311.594"/>
+</vector>
+
+<!--    "Icon made by Pixel perfect from www.flaticon.com"-->

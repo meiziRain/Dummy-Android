@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
@@ -26,23 +27,45 @@ import com.alibaba.fastjson.JSONObject;
 import com.meizi.dummy.bean.User;
 import com.meizi.dummy.http.HttpConstants;
 import com.meizi.dummy.http.HttpUtil;
+import com.tencent.imsdk.TIMCallBack;
+import com.tencent.imsdk.TIMConnListener;
+import com.tencent.imsdk.TIMConversation;
+import com.tencent.imsdk.TIMGroupEventListener;
+import com.tencent.imsdk.TIMGroupTipsElem;
+import com.tencent.imsdk.TIMManager;
+import com.tencent.imsdk.TIMRefreshListener;
+import com.tencent.imsdk.TIMSdkConfig;
+import com.tencent.imsdk.TIMUserConfig;
+import com.tencent.imsdk.TIMUserStatusListener;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import cn.hutool.core.codec.Base64;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
+    private static final String TIM_TAG = "TIM:";
     private static final int REQUEST_SIGNUP = 0;
+
+
+    /**
+     * 腾讯云 SDKAppId，需要替换为您自己账号下的 SDKAppId。
+     * <p>
+     * 进入腾讯云云通信[控制台](https://console.cloud.tencent.com/avc ) 创建应用，即可看到 SDKAppId，
+     * 它是腾讯云用于区分客户的唯一标识。
+     */
+    public static final int SDKAPPID = 1400295156;
 
     @BindView(R.id.input_email)
     EditText _emailText;
@@ -77,11 +100,11 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+
+        // Login
         _emailText.setText("1234@qq.com");
         _passwordText.setText("1234");
-
         _loginButton.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 login();
@@ -95,9 +118,7 @@ public class LoginActivity extends AppCompatActivity {
         spannableString.setSpan(underlineSpan, 16, _signupLink.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannableString.setSpan(foregroundColorSpan, 16, _signupLink.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         _signupLink.setText(spannableString);
-
         _signupLink.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 // Start the Signup activity
@@ -107,6 +128,7 @@ public class LoginActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);
             }
         });
+
     }
 
     public void login() {
@@ -170,12 +192,15 @@ public class LoginActivity extends AppCompatActivity {
                             progressDialog.dismiss();
                             _loginButton.setEnabled(true);
                         } else {
+                            // 获取userSig函数
+                            String sig = jsonObject.getJSONObject("data").get("signature").toString();
                             String JWT = jsonObject.getJSONObject("data").get("token").toString();
                             SharedPreferences sharedPreferences = getSharedPreferences("user", Context.MODE_PRIVATE);
                             SharedPreferences.Editor editor = sharedPreferences.edit();
                             editor.putString("token", JWT);
                             editor.putString("email", user.getUserEmail());
                             editor.putString("pwd", user.getPassword());
+                            editor.putString("sig", Base64.encode(sig));
                             editor.putBoolean("rememberMe", true);
                             editor.commit();
                             progressDialog.dismiss();
@@ -219,7 +244,6 @@ public class LoginActivity extends AppCompatActivity {
 
     public void onLoginFailed() {
         Toast.makeText(getBaseContext(), "Login failed", Toast.LENGTH_LONG).show();
-
         _loginButton.setEnabled(true);
     }
 

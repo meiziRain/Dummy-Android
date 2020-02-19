@@ -24,17 +24,18 @@
         </LinearLayout>
 
         <!-- Name Label -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp">
-            <EditText android:id="@+id/input_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName"
-                android:hint="Nickname" />
-        </com.google.android.material.textfield.TextInputLayout>
+<!--        昵称填写放到个人资料填写-->
+<!--        <com.google.android.material.textfield.TextInputLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:layout_marginBottom="8dp">-->
+<!--            <EditText android:id="@+id/input_name"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:inputType="textPersonName"-->
+<!--                android:hint="Nickname" />-->
+<!--        </com.google.android.material.textfield.TextInputLayout>-->
 
         <!-- Address Label -->
 <!--        <com.google.android.material.textfield.TextInputLayout-->

@@ -2,13 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_home_black_24dp"
-        android:title="@string/title_home"
-        />
+        android:id="@+id/navigation_conversation"
+        android:checked="true"
+        android:icon="@drawable/ic_paper_plane"
+        android:title="@string/title_home" />
     <item
-        android:id="@+id/navigation_dashboard"
-        android:icon="@drawable/ic_dashboard_black_24dp"
+        android:id="@+id/navigation_contact"
+        android:icon="@drawable/ic_contact"
         android:title="@string/title_dashboard" />
 
     <item

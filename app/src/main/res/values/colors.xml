@@ -12,6 +12,7 @@
     <color name="primary_dark">#000000</color>
     <color name="primary_darker">#000000</color>
     <color name="accent">#000000</color>
+    <color name="transparent">#00000000</color>
 
 
     <!-- My Common Colors -->

@@ -39,8 +39,8 @@ import okhttp3.Response;
 public class SignupActivity extends AppCompatActivity {
     private static final String TAG = "SignupActivity";
 
-    @BindView(R.id.input_name)
-    EditText _nameText;
+//    @BindView(R.id.input_name)
+//    EditText _nameText;
     //    @BindView(R.id.input_address)
 //    EditText _addressText;
     @BindView(R.id.input_email)
@@ -107,7 +107,7 @@ public class SignupActivity extends AppCompatActivity {
             }
         });
 
-        _nameText.setText("1234");
+//        _nameText.setText("1234");
         _emailText.setText("1234@qq.com");
         _passwordText.setText("1234");
         _reEnterPasswordText.setText("1234");
@@ -129,7 +129,7 @@ public class SignupActivity extends AppCompatActivity {
         progressDialog.setMessage("Creating Account...");
         progressDialog.show();
 
-        String name = _nameText.getText().toString();
+//        String name = _nameText.getText().toString();
 //        String address = _addressText.getText().toString();
         String email = _emailText.getText().toString();
 //        String mobile = _mobileText.getText().toString();
@@ -138,7 +138,7 @@ public class SignupActivity extends AppCompatActivity {
 
         // TODO: Implement your own signup logic here.
         User sign_up = new User();
-        sign_up.setNickName(name);
+//        sign_up.setNickName(name);
         sign_up.setUserEmail(email);
         sign_up.setPassword(password);
         createUser(sign_up, progressDialog);
@@ -227,19 +227,19 @@ public class SignupActivity extends AppCompatActivity {
     public boolean validate() {
         boolean valid = true;
 
-        String name = _nameText.getText().toString();
+//        String name = _nameText.getText().toString();
 //        String address = _addressText.getText().toString();
         String email = _emailText.getText().toString();
 //        String mobile = _mobileText.getText().toString();
         String password = _passwordText.getText().toString();
         String reEnterPassword = _reEnterPasswordText.getText().toString();
 
-        if (name.isEmpty() || name.length() < 3) {
-            _nameText.setError("at least 3 characters");
-            valid = false;
-        } else {
-            _nameText.setError(null);
-        }
+//        if (name.isEmpty() || name.length() < 3) {
+//            _nameText.setError("at least 3 characters");
+//            valid = false;
+//        } else {
+//            _nameText.setError(null);
+//        }
 
 //        if (address.isEmpty()) {
 //            _addressText.setError("Enter Valid Address");

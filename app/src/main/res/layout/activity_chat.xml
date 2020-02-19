@@ -1,24 +1,41 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ChatActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:layout_centerHorizontal="true"
+    android:gravity="bottom"
+    tools:context="com.meizi.dummy.ChatActivity">
 
-<!--    <com.stfalcon.chatkit.messages.MessagesList-->
-<!--        android:id="@+id/messagesList"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:layout_above="@+id/input" />-->
-
-
-<!--    <com.stfalcon.chatkit.messages.MessageInput-->
-<!--        android:id="@+id/input"-->
+<!--    <Button-->
+<!--        android:id="@+id/btn"-->
 <!--        android:layout_width="match_parent"-->
 <!--        android:layout_height="wrap_content"-->
 <!--        android:layout_alignParentBottom="true"-->
-<!--        app:inputHint="input..." />-->
+<!--        android:text="Btn"></Button>-->
 
-</LinearLayout>
+
+    <com.dewarder.holdinglibrary.HoldingButtonLayout
+        android:layout_alignParentBottom="true"
+        android:id="@+id/input_holder"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:textAlignment="center"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        app:hbl_cancel_icon="@drawable/ic_send_sound"
+        app:hbl_holding_view="@+id/start_record"
+        app:hbl_icon="@drawable/ic_swipe"
+        app:hbl_direction="right"
+        app:hbl_radius="@dimen/activity_main_holding_button_radius">
+
+        <ImageView
+            android:id="@+id/start_record"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:scaleType="center"
+            android:src="@drawable/ic_microphone" />
+    </com.dewarder.holdinglibrary.HoldingButtonLayout>
+</RelativeLayout>
