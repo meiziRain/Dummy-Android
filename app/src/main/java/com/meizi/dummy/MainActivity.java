@@ -90,7 +90,16 @@ public class MainActivity extends AppCompatActivity implements GetFragmentListen
         //  所以此处直接隐藏ActionBar
 //        getSupportActionBar().hide();
 
-
+        setContentView(R.layout.activity_main);
+        BottomNavigationView navView = findViewById(R.id.nav_view);
+        // Passing each menu ID as a set of Ids because each
+        // menu should be considered as top level destinations.
+        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
+                R.id.navigation_conversation, R.id.navigation_contact, R.id.navigation_notifications)
+                .build();
+        NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment);
+        NavigationUI.setupActionBarWithNavController(MainActivity.this, navController, appBarConfiguration);
+        NavigationUI.setupWithNavController(navView, navController);
 
 
         // 腾讯IM SDK 初始化
@@ -118,18 +127,7 @@ public class MainActivity extends AppCompatActivity implements GetFragmentListen
                 @Override
                 public void onSuccess() {
                     Log.d(activity_tag, "TIM登录成功!");
-                    Log.d(activity_tag, "get数据!");
-                    Log.d(activity_tag, "get完成数据!");
-                    setContentView(R.layout.activity_main);
-                    BottomNavigationView navView = findViewById(R.id.nav_view);
-                    // Passing each menu ID as a set of Ids because each
-                    // menu should be considered as top level destinations.
-                    AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                            R.id.navigation_conversation, R.id.navigation_contact, R.id.navigation_notifications)
-                            .build();
-                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment);
-                    NavigationUI.setupActionBarWithNavController(MainActivity.this, navController, appBarConfiguration);
-                    NavigationUI.setupWithNavController(navView, navController);
+                    DummyKit.user = email;
                 }
             });
         }

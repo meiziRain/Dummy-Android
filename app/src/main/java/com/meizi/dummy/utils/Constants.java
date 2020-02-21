@@ -28,6 +28,9 @@ public class Constants {
     public static String RECORD_DIR = APP_DIR + "record" + File.separator;
     // 用户保存的需要用来接龙的录音
     public static String RECORD_Star_DIR = APP_DIR + File.separator + "record" + File.separator + "star" + File.separator;
+    // 录音最大时长
+    public final static int DEFAULT_AUDIO_RECORD_MAX_TIME = 60;
+
 
 
     public static String VIDEO_DOWNLOAD_DIR = APP_DIR + "/video/download/";

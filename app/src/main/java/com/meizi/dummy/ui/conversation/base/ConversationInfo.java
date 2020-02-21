@@ -1,7 +1,6 @@
 package com.meizi.dummy.ui.conversation.base;
 
 import android.graphics.Bitmap;
-import com.meizi.dummy.ui.chat.message.MessageInfo;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;

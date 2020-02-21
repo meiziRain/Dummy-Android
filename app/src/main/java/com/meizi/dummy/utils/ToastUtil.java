@@ -5,6 +5,8 @@ import android.app.Application;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.meizi.dummy.DummyKit;
+
 
 /**
  * @Classname BackgroundTasks
@@ -13,9 +15,10 @@ import android.widget.Toast;
  * @Created by meizi
  */
 public class ToastUtil {
+
     private static Toast mToast;
 
-    public static final void longMessage(Context context, final String message) {
+    public static final void longMessage(final String message) {
         BackgroundTasks.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -23,14 +26,14 @@ public class ToastUtil {
                     mToast.cancel();
                     mToast = null;
                 }
-                mToast = Toast.makeText(context, message,
+                mToast = Toast.makeText(DummyKit.getAppContext(), message,
                         Toast.LENGTH_LONG);
                 mToast.show();
             }
         });
     }
 
-    public static final void shortMessage(Context context, final String message) {
+    public static final void shortMessage(final String message) {
         BackgroundTasks.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -38,7 +41,7 @@ public class ToastUtil {
                     mToast.cancel();
                     mToast = null;
                 }
-                mToast = Toast.makeText(context, message,
+                mToast = Toast.makeText(DummyKit.getAppContext(), message,
                         Toast.LENGTH_SHORT);
                 mToast.show();
             }

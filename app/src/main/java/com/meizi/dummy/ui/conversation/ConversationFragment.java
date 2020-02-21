@@ -13,6 +13,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -38,11 +39,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.meizi.dummy.ChatActivity;
 import com.meizi.dummy.LoginActivity;
 import com.meizi.dummy.R;
-import com.meizi.dummy.ui.chat.message.MessageInfo;
+import com.meizi.dummy.ui.chat.Msg;
 import com.meizi.dummy.ui.conversation.base.ConversationAdapter;
 import com.meizi.dummy.ui.conversation.base.ConversationInfo;
 import com.meizi.dummy.ui.conversation.base.ConversationRefreshListener;
 import com.meizi.dummy.ui.conversation.base.GetFragmentListener;
+import com.simple.bubbleviewlibrary.BubbleView;
 import com.tencent.imsdk.TIMCallBack;
 import com.tencent.imsdk.TIMConversation;
 import com.tencent.imsdk.TIMConversationType;
@@ -65,30 +67,26 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConversationFragment extends Fragment implements ConversationRefreshListener {
+public class ConversationFragment extends Fragment {
     public ConversationAdapter mAdapter;
     public int mUnreadTotal;
     public ArrayList<ConversationInfo> conversationInfoList;
     private GetFragmentListener getFragmentListener;
     SwipeMenuListView swipeMenuListView;
 
-
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_conversation, container, false);
-        System.out.println("Order:onCreateView:");
+
         // 向MainActivity 传递 Fragment
         getFragmentListener.sendValue(ConversationFragment.this);
-        // TIM 开始收听消息
-        initTIMListener();
         swipeMenuListView = root.findViewById(R.id.listView);
-        System.out.println("Sign:" + "???");
 
         SharedPreferences sharedPreferences = getContext().getSharedPreferences("conversation", Context.MODE_PRIVATE);
         String conversationJSONStr = sharedPreferences.getString("conversationJSONStr", "");
-//        if (!conversationJSONStr.equals("")) {
-//            conversationInfoList = (ArrayList<ConversationInfo>) JSON.parseArray(conversationJSONStr, ConversationInfo.class);
-//        }
+        if (!conversationJSONStr.equals("")) {
+            conversationInfoList = (ArrayList<ConversationInfo>) JSON.parseArray(conversationJSONStr, ConversationInfo.class);
+        }
         initSwipeMenuListView(swipeMenuListView);
         return root;
     }
@@ -107,7 +105,6 @@ public class ConversationFragment extends Fragment implements ConversationRefres
     @Override
     public void onStart() {
         super.onStart();
-
     }
 
     public void refreshConversationList() {
@@ -125,6 +122,11 @@ public class ConversationFragment extends Fragment implements ConversationRefres
             }
         }
         initSwipeMenuListView(getActivity().findViewById(R.id.listView));
+        // Put in local
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("conversation", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("conversationJSONStr", JSON.toJSONString(conversationInfoList));
+        editor.commit();
     }
 
     public void initSwipeMenuListView(SwipeMenuListView listView) {
@@ -165,21 +167,14 @@ public class ConversationFragment extends Fragment implements ConversationRefres
 
             // set creator
             listView.setMenuCreator(creator);
-
-//            // Put in local
-//            SharedPreferences sharedPreferences = getContext().getSharedPreferences("conversation", Context.MODE_PRIVATE);
-//            SharedPreferences.Editor editor = sharedPreferences.edit();
-//            editor.putString("conversationJSONStr", JSON.toJSONString(conversationInfoList));
-//            editor.commit();
-            listView.setOnItemClickListener((adapterView, view, i, l) -> {
-                switch (i) {  //用swith的方法来实现item的每一项的点击
-                    case 0://0代表第一行的点击！也可以点击Item实现跳转！只要用Intent来实现就好！
-                        Intent intent = new Intent(getContext(), ChatActivity.class);
-                        startActivity(intent);
-                        break;
-                    case 1://0代表第一行的点击
-                        Toast.makeText(getContext(), "我终于找到你了......", Toast.LENGTH_SHORT).show();
-                        break;
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    Intent intent = new Intent(ConversationFragment.this.getContext(), ChatActivity.class);
+                    // 传入用户昵称，
+                    intent.putExtra("target", mAdapter.getItem(i).getId());
+                    intent.putExtra("title", mAdapter.getItem(i).getTitle());
+                    ConversationFragment.this.startActivity(intent);
                 }
             });
 
@@ -221,54 +216,6 @@ public class ConversationFragment extends Fragment implements ConversationRefres
                 getResources().getDisplayMetrics());
     }
 
-    public void initTIMListener() {
-        TIMManager.getInstance().addMessageListener(msgs -> {//收到新消息
-
-            //消息的内容解析请参考消息收发文档中的消息解析说明
-            /* 消息 */
-            for (int j = 0; j < msgs.size(); j++) {
-                TIMMessage msg = msgs.get(j);
-                for (int i = 0; i < msg.getElementCount(); ++i) {
-                    TIMElem elem = msg.getElement(i);
-                    //获取当前元素的类型
-                    TIMElemType elemType = elem.getType();
-                    Log.d("Chat", "elem type: " + elemType.name());
-                    if (elemType == TIMElemType.Text) {
-                        //处理文本消息
-                        getActivity().runOnUiThread(() -> {
-                            TIMTextElem timTextElem = (TIMTextElem) elem;
-                        });
-                    } else if (elemType == TIMElemType.Sound) {
-                        //处理语音消息
-                        TIMSoundElem timSoundElem = (TIMSoundElem) elem;
-                        String filePath = File.separator + "mnt"
-                                + File.separator + "sdcard" + File.separator + "dummy" + File.separator + ((TIMSoundElem) elem).getUuid();
-                        ((TIMSoundElem) elem).getSoundToFile(filePath, new TIMCallBack() {
-                            @Override
-                            public void onError(int code, String desc) {//获取图片失败
-                                //错误码 code 和错误描述 desc，可用于定位请求失败原因
-                                //错误码 code 含义请参见错误码表
-                                Log.d("Chat", "setSound failed. code: " + code + " errmsg: " + desc);
-                            }
-
-                            @Override
-                            public void onSuccess() {//成功，参数为图片数据
-                                //doSomething
-                                Log.d("Chat", "getSound success.");
-                                getActivity().runOnUiThread(() -> {
-//                                    MediaPlayer mediaPlayer = new MediaPlayer();
-//                                    mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.fromFile(new File(filePath)));
-//                                    mediaPlayer.start();
-                                });
-                            }
-                        });
-
-                    }//...处理更多消息
-                }
-            }
-            return false; //返回true将终止回调链，不再调用下一个新消息监听器
-        });
-    }
 
     /**
      * TIMConversation转换为ConversationInfo

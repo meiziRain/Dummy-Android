@@ -1,4 +1,4 @@
-package com.meizi.dummy.ui.chat.message;
+package com.meizi.dummy.ui.conversation.base;
 
 import android.net.Uri;
 
