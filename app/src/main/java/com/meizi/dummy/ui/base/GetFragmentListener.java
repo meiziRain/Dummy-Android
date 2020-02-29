@@ -1,4 +1,4 @@
-package com.meizi.dummy.ui.conversation.base;
+package com.meizi.dummy.ui.base;
 
 import com.meizi.dummy.ui.conversation.ConversationFragment;
 

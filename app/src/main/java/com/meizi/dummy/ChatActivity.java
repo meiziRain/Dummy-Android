@@ -1,107 +1,58 @@
 package com.meizi.dummy;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.graphics.drawable.ColorDrawable;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.FileUtils;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewPropertyAnimator;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.dewarder.holdinglibrary.HoldingButtonLayout;
 import com.dewarder.holdinglibrary.HoldingButtonLayoutListener;
-import com.dewarder.holdinglibrary.SimpleHoldingButtonLayoutListener;
 import com.meizi.dummy.component.AudioPlayer;
 import com.meizi.dummy.ui.chat.MessageInfoUtil;
-import com.meizi.dummy.ui.chat.Msg;
 import com.meizi.dummy.ui.chat.MsgAdapter;
-import com.meizi.dummy.ui.conversation.base.MessageInfo;
+import com.meizi.dummy.ui.base.MessageInfo;
 import com.meizi.dummy.utils.Constants;
+import com.meizi.dummy.utils.NetWorkUtils;
 import com.meizi.dummy.utils.ToastUtil;
-import com.meizi.dummy.utils.UIUtils;
 import com.tencent.imsdk.TIMCallBack;
-import com.tencent.imsdk.TIMConnListener;
 import com.tencent.imsdk.TIMConversation;
 import com.tencent.imsdk.TIMConversationType;
 import com.tencent.imsdk.TIMElem;
 import com.tencent.imsdk.TIMElemType;
-import com.tencent.imsdk.TIMGroupEventListener;
-import com.tencent.imsdk.TIMGroupTipsElem;
 import com.tencent.imsdk.TIMManager;
 import com.tencent.imsdk.TIMMessage;
-import com.tencent.imsdk.TIMMessageListener;
-import com.tencent.imsdk.TIMRefreshListener;
-import com.tencent.imsdk.TIMSNSChangeInfo;
-import com.tencent.imsdk.TIMSdkConfig;
 import com.tencent.imsdk.TIMSoundElem;
 import com.tencent.imsdk.TIMTextElem;
-import com.tencent.imsdk.TIMUserConfig;
-import com.tencent.imsdk.TIMUserStatusListener;
 import com.tencent.imsdk.TIMValueCallBack;
-import com.tencent.imsdk.ext.message.TIMMessageReceipt;
-import com.tencent.imsdk.ext.message.TIMMessageReceiptListener;
-import com.tencent.imsdk.friendship.TIMFriendPendencyInfo;
-import com.tencent.imsdk.friendship.TIMFriendshipListener;
-import com.ufreedom.floatingview.Floating;
-import com.ufreedom.floatingview.FloatingBuilder;
 import com.ufreedom.floatingview.FloatingElement;
-import com.ufreedom.floatingview.spring.SimpleReboundListener;
-import com.ufreedom.floatingview.spring.SpringHelper;
-import com.ufreedom.floatingview.transition.BaseFloatingPathTransition;
-import com.ufreedom.floatingview.transition.FloatingPath;
-import com.ufreedom.floatingview.transition.FloatingTransition;
-import com.ufreedom.floatingview.transition.PathPosition;
-import com.ufreedom.floatingview.transition.YumFloating;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
-import java.util.Random;
 import java.util.UUID;
 
 public class ChatActivity extends AppCompatActivity implements HoldingButtonLayoutListener, EasyPermissions.PermissionCallbacks {
 
     @BindView(R.id.input_holder)
     HoldingButtonLayout holdingButtonLayout;
+    @BindView(R.id.swiperefreshlayout)
+    SwipeRefreshLayout swipeRefreshLayout;
     private final String ACTIVITY_TAG = "ChatActivity:";
     // 录音计时
     private long recordStartTime;
@@ -127,6 +78,9 @@ public class ChatActivity extends AppCompatActivity implements HoldingButtonLayo
     private MsgAdapter adapter;
     // 消息数据
     private List<MessageInfo> mMsgList;
+
+    // list顶部的TIMMessage
+    TIMMessage topTimMessage = null;
 
     // 消息返送目标id
     String target;
@@ -185,8 +139,51 @@ public class ChatActivity extends AppCompatActivity implements HoldingButtonLayo
     }
 
 
+    public void loadLocalChatMessages(TIMMessage top) {
+        TIMConversation con = TIMManager.getInstance().getConversation(TIMConversationType.C2C, target);
+        //获取此会话的消息
+        con.getLocalMessage(10, //获取此会话最近的 10 条消息
+                top, //不指定从哪条消息开始获取 - 等同于从最新的消息开始往前
+                new TIMValueCallBack<List<TIMMessage>>() {//回调接口
+                    @Override
+                    public void onError(int code, String desc) {//获取消息失败
+                        //接口返回了错误码 code 和错误描述 desc，可用于定位请求失败原因
+                        //错误码 code 含义请参见错误码表
+                        Log.d("initMsgs:", "get message failed. code: " + code + " errmsg: " + desc);
+                    }
+
+                    @Override
+                    public void onSuccess(List<TIMMessage> msgs) {//获取消息成功
+                        //遍历取得的消息
+                        List<MessageInfo> list = MessageInfoUtil.TIMMessages2MessageInfos(msgs, false);
+                        for (MessageInfo messageInfo : list) {
+                            System.out.println("Chat:" + messageInfo.getMsgTime());
+                        }
+                        Collections.reverse(list);
+                        mMsgList.addAll(list);
+                        for (MessageInfo messageInfo : list) {
+                            System.out.println("Chat add:" + messageInfo.getMsgTime());
+                        }
+                        topTimMessage = msgs.get(0);
+                        swipeRefreshLayout.setRefreshing(false);
+                        adapter = new MsgAdapter(mMsgList);
+                        msgRecyclerView.setAdapter(adapter);
+
+//                        for(TIMMessage msg : msgs) {
+//                            lastMsg = msg;
+//                            //可以通过 timestamp()获得消息的时间戳, isSelf()是否为自己发送的消息
+//                            Log.e("initMsgs:", "get msg: " + msg.timestamp() + " self: " + msg.isSelf() + " seq: " + msg.getSeq());
+//                        }
+                    }
+                });
+    }
+
     private void initMsgs() {
         mMsgList = new ArrayList<>();
+        adapter = new MsgAdapter(mMsgList);
+        //获取会话扩展实例
+        // Todo
+        loadLocalChatMessages(topTimMessage);
     }
 
     @Override
@@ -216,12 +213,40 @@ public class ChatActivity extends AppCompatActivity implements HoldingButtonLayo
         msgRecyclerView = (RecyclerView) findViewById(R.id.chat_list);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         msgRecyclerView.setLayoutManager(layoutManager);
+
+
         initMsgs();
 
 
         // TIM 开始收听消息
         initTIMListener();
         setIsRead();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initSwipeRefreshLayout();
+    }
+
+    void initSwipeRefreshLayout() {
+        swipeRefreshLayout.setRefreshing(true);
+        //设置下拉时圆圈的颜色（可以由多种颜色拼成）
+        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_light,
+                android.R.color.holo_red_light,
+                android.R.color.holo_orange_light);
+
+        //设置下拉时圆圈的背景颜色（这里设置成白色）
+        swipeRefreshLayout.setProgressBackgroundColorSchemeResource(android.R.color.white);
+        swipeRefreshLayout.setProgressViewOffset(true, 100, 200);
+        swipeRefreshLayout.setProgressViewEndTarget(true, 380);
+        //设置触发刷新的距离
+        swipeRefreshLayout.setDistanceToTriggerSync(200);
+        //设置下拉刷新时的操作
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            //具体操作
+            loadLocalChatMessages(topTimMessage);
+        });
     }
 
     void setIsRead() {
@@ -289,7 +314,7 @@ public class ChatActivity extends AppCompatActivity implements HoldingButtonLayo
                     } else if (elemType == TIMElemType.Sound) {
                         //处理语音消息
                         TIMSoundElem timSoundElem = (TIMSoundElem) elem;
-                        String filePath = Constants.RECORD_DIR + ((TIMSoundElem) elem).getUuid();
+                        final String filePath = Constants.RECORD_DIR + ((TIMSoundElem) elem).getUuid();
                         ((TIMSoundElem) elem).getSoundToFile(filePath, new TIMCallBack() {
                             @Override
                             public void onError(int code, String desc) {
@@ -302,14 +327,12 @@ public class ChatActivity extends AppCompatActivity implements HoldingButtonLayo
                             public void onSuccess() {
                                 //doSomething
                                 Log.d("Chat", "getSound success.");
-                                runOnUiThread(() -> {
-                                    MessageInfo messageInfo = new MessageInfo();
-                                    messageInfo.setSelf(false);
-                                    messageInfo.setDataPath(filePath);
-                                    mMsgList.add(messageInfo);
-                                    // you need update msg list
-                                    updateMessageListView();
-                                });
+                                MessageInfo messageInfo = new MessageInfo();
+                                messageInfo.setSelf(false);
+                                messageInfo.setDataPath(filePath);
+                                mMsgList.add(messageInfo);
+                                // you need update msg list
+                                updateMessageListView();
                             }
                         });
 

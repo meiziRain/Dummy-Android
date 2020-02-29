@@ -1,8 +1,15 @@
 package com.meizi.dummy.ui.chat;
 
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.text.TextUtils;
-import com.meizi.dummy.ui.conversation.base.MessageInfo;
+import android.util.Log;
+
+import com.meizi.dummy.ui.base.MessageInfo;
+import com.meizi.dummy.utils.Constants;
+import com.meizi.dummy.utils.DateTimeUtil;
+import com.meizi.dummy.utils.FileUtil;
+import com.meizi.dummy.utils.ImageUtil;
 import com.tencent.imsdk.TIMCallBack;
 import com.tencent.imsdk.TIMCustomElem;
 import com.tencent.imsdk.TIMElem;
@@ -30,6 +37,8 @@ import com.tencent.imsdk.TIMVideoElem;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.hutool.core.date.DateUtil;
 
 
 public class MessageInfoUtil {
@@ -189,6 +198,334 @@ public class MessageInfoUtil {
         return info;
     }
 
+    /**
+     * 把SDK的消息bean列表转化为TUIKit的消息bean列表
+     *
+     * @param timMessages SDK的群消息bean列表
+     * @param isGroup     是否是群消息
+     * @return
+     */
+    public static List<MessageInfo> TIMMessages2MessageInfos(List<TIMMessage> timMessages, boolean isGroup) {
+        if (timMessages == null) {
+            return null;
+        }
+        List<MessageInfo> messageInfos = new ArrayList<>();
+        for (int i = 0; i < timMessages.size(); i++) {
+            TIMMessage timMessage = timMessages.get(i);
+            List<MessageInfo> info = TIMMessage2MessageInfo(timMessage, isGroup);
+            if (info != null) {
+                messageInfos.addAll(info);
+            }
+        }
+        return messageInfos;
+    }
+
+    /**
+     * 把SDK的消息bean转化为TUIKit的消息bean
+     *
+     * @param timMessage SDK的群消息bean
+     * @param isGroup    是否是群消息
+     * @return
+     */
+    public static List<MessageInfo> TIMMessage2MessageInfo(TIMMessage timMessage, boolean isGroup) {
+        if (timMessage == null || timMessage.status() == TIMMessageStatus.HasDeleted || timMessage.getElementCount() == 0) {
+            return null;
+        }
+        List<MessageInfo> list = new ArrayList<>();
+        for (int i = 0; i < timMessage.getElementCount(); i++) {
+            final MessageInfo msgInfo = new MessageInfo();
+            if (ele2MessageInfo(msgInfo, timMessage, timMessage.getElement(i), isGroup) != null) {
+                list.add(msgInfo);
+            }
+        }
+        return list;
+    }
+
+
+    private static MessageInfo ele2MessageInfo(final MessageInfo msgInfo, TIMMessage timMessage, TIMElem ele, boolean isGroup) {
+        if (msgInfo == null
+                || timMessage == null
+                || timMessage.status() == TIMMessageStatus.HasDeleted
+                || timMessage.getElementCount() == 0
+                || ele == null
+                || ele.getType() == TIMElemType.Invalid) {
+            Log.e(TAG, "ele2MessageInfo parameters error");
+            return null;
+        }
+        String sender = timMessage.getSender();
+        msgInfo.setTIMMessage(timMessage);
+        msgInfo.setElement(ele);
+        msgInfo.setGroup(isGroup);
+        msgInfo.setId(timMessage.getMsgId());
+        msgInfo.setUniqueId(timMessage.getMsgUniqueId());
+        msgInfo.setPeerRead(timMessage.isPeerReaded());
+        msgInfo.setFromUser(sender);
+        if (isGroup) {
+            TIMGroupMemberInfo memberInfo = timMessage.getSenderGroupMemberProfile();
+            if (memberInfo != null && !TextUtils.isEmpty(memberInfo.getNameCard())) {
+                msgInfo.setGroupNameCard(memberInfo.getNameCard());
+            }
+        }
+        msgInfo.setMsgTime(timMessage.timestamp());
+        msgInfo.setSelf(sender.equals(TIMManager.getInstance().getLoginUser()));
+
+        TIMElemType type = ele.getType();
+        if (type == TIMElemType.Custom) {
+            TIMCustomElem customElem = (TIMCustomElem) ele;
+            String data = new String(customElem.getData());
+            if (data.equals(GROUP_CREATE)) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_CREATE);
+                String message = Constants.covert2HTMLString(
+                        TextUtils.isEmpty(msgInfo.getGroupNameCard())
+                                ? msgInfo.getFromUser()
+                                : msgInfo.getGroupNameCard()) + "创建群组";
+                msgInfo.setExtra(message);
+            } else if (data.equals(GROUP_DELETE)) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_DELETE);
+                msgInfo.setExtra(new String(customElem.getExt()));
+            }
+//            else {
+//                if (isTyping(customElem.getData())) {
+//                    // 忽略正在输入，它不能作为真正的消息展示
+//                    return null;
+//                }
+//                msgInfo.setMsgType(MessageInfo.MSG_TYPE_CUSTOM);
+//                msgInfo.setExtra("[自定义消息]");
+//            }
+        } else if (type == TIMElemType.GroupTips) {
+            TIMGroupTipsElem groupTips = (TIMGroupTipsElem) ele;
+            TIMGroupTipsType tipsType = groupTips.getTipsType();
+            String user = "";
+            if (groupTips.getChangedGroupMemberInfo().size() > 0) {
+                Object ids[] = groupTips.getChangedGroupMemberInfo().keySet().toArray();
+                for (int i = 0; i < ids.length; i++) {
+                    user = user + ids[i].toString();
+                    if (i != 0)
+                        user = "，" + user;
+                    if (i == 2 && ids.length > 3) {
+                        user = user + "等";
+                        break;
+                    }
+                }
+
+            } else {
+                user = groupTips.getOpUserInfo().getIdentifier();
+            }
+            String message = Constants.covert2HTMLString(user);
+            if (tipsType == TIMGroupTipsType.Join) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_JOIN);
+                message = message + "加入群组";
+            }
+            if (tipsType == TIMGroupTipsType.Quit) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_QUITE);
+                message = message + "退出群组";
+            }
+            if (tipsType == TIMGroupTipsType.Kick) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_KICK);
+                message = message + "被踢出群组";
+            }
+            if (tipsType == TIMGroupTipsType.SetAdmin) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                message = message + "被设置管理员";
+            }
+            if (tipsType == TIMGroupTipsType.CancelAdmin) {
+                msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                message = message + "被取消管理员";
+            }
+            if (tipsType == TIMGroupTipsType.ModifyGroupInfo) {
+                List<TIMGroupTipsElemGroupInfo> modifyList = groupTips.getGroupInfoList();
+                for (int i = 0; i < modifyList.size(); i++) {
+                    TIMGroupTipsElemGroupInfo modifyInfo = modifyList.get(i);
+                    TIMGroupTipsGroupInfoType modifyType = modifyInfo.getType();
+                    if (modifyType == TIMGroupTipsGroupInfoType.ModifyName) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NAME);
+                        message = message + "修改群名称为\"" + modifyInfo.getContent() + "\"";
+                    } else if (modifyType == TIMGroupTipsGroupInfoType.ModifyNotification) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "修改群公告为\"" + modifyInfo.getContent() + "\"";
+                    } else if (modifyType == TIMGroupTipsGroupInfoType.ModifyOwner) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "转让群主给\"" + modifyInfo.getContent() + "\"";
+                    } else if (modifyType == TIMGroupTipsGroupInfoType.ModifyFaceUrl) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "修改了群头像";
+                    } else if (modifyType == TIMGroupTipsGroupInfoType.ModifyIntroduction) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "修改群介绍为\"" + modifyInfo.getContent() + "\"";
+                    }
+                    if (i < modifyList.size() - 1) {
+                        message = message + "、";
+                    }
+                }
+            }
+            if (tipsType == TIMGroupTipsType.ModifyMemberInfo) {
+                List<TIMGroupTipsElemMemberInfo> modifyList = groupTips.getMemberInfoList();
+                if (modifyList.size() > 0) {
+                    long shutupTime = modifyList.get(0).getShutupTime();
+                    if (shutupTime > 0) {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "被禁言\"" + DateTimeUtil.formatSeconds(shutupTime) + "\"";
+                    } else {
+                        msgInfo.setMsgType(MessageInfo.MSG_TYPE_GROUP_MODIFY_NOTICE);
+                        message = message + "被取消禁言";
+                    }
+                }
+            }
+            if (TextUtils.isEmpty(message)) {
+                return null;
+            }
+            msgInfo.setExtra(message);
+        } else {
+            if (type == TIMElemType.Text) {
+                TIMTextElem txtEle = (TIMTextElem) ele;
+                msgInfo.setExtra(txtEle.getText());
+            } else if (type == TIMElemType.Face) {
+                TIMFaceElem txtEle = (TIMFaceElem) ele;
+                if (txtEle.getIndex() < 1 || txtEle.getData() == null) {
+                    Log.e("MessageInfoUtil", "txtEle data is null or index<1");
+                    return null;
+                }
+                msgInfo.setExtra("[自定义表情]");
+
+
+            } else if (type == TIMElemType.Sound) {
+                TIMSoundElem soundElemEle = (TIMSoundElem) ele;
+                if (msgInfo.isSelf()) {
+                    msgInfo.setDataPath(soundElemEle.getPath());
+                } else {
+                    final String path = Constants.RECORD_DOWNLOAD_DIR + soundElemEle.getUuid();
+                    File file = new File(path);
+                    if (!file.exists()) {
+                        soundElemEle.getSoundToFile(path, new TIMCallBack() {
+                            @Override
+                            public void onError(int code, String desc) {
+                            }
+
+                            @Override
+                            public void onSuccess() {
+                                msgInfo.setDataPath(path);
+                            }
+                        });
+                    } else {
+                        msgInfo.setDataPath(path);
+                    }
+                }
+                msgInfo.setExtra("[语音]");
+            } else if (type == TIMElemType.Image) {
+                TIMImageElem imageEle = (TIMImageElem) ele;
+                String localPath = imageEle.getPath();
+                if (msgInfo.isSelf() && !TextUtils.isEmpty(localPath)) {
+                    msgInfo.setDataPath(localPath);
+                    int size[] = ImageUtil.getImageSize(localPath);
+                    msgInfo.setImgWidth(size[0]);
+                    msgInfo.setImgHeight(size[1]);
+                }
+                //本地路径为空，可能为更换手机或者是接收的消息
+                else {
+                    List<TIMImage> imgs = imageEle.getImageList();
+                    for (int i = 0; i < imgs.size(); i++) {
+                        TIMImage img = imgs.get(i);
+                        if (img.getType() == TIMImageType.Thumb) {
+                            final String path = Constants.IMAGE_DOWNLOAD_DIR + img.getUuid();
+                            msgInfo.setImgWidth((int) img.getWidth());
+                            msgInfo.setImgHeight((int) img.getHeight());
+                            File file = new File(path);
+                            if (file.exists()) {
+                                msgInfo.setDataPath(path);
+                            }
+                        }
+                    }
+                }
+
+                msgInfo.setExtra("[图片]");
+            } else if (type == TIMElemType.Video) {
+                TIMVideoElem videoEle = (TIMVideoElem) ele;
+                if (msgInfo.isSelf() && !TextUtils.isEmpty(videoEle.getSnapshotPath())) {
+                    int size[] = ImageUtil.getImageSize(videoEle.getSnapshotPath());
+                    msgInfo.setImgWidth(size[0]);
+                    msgInfo.setImgHeight(size[1]);
+                    msgInfo.setDataPath(videoEle.getSnapshotPath());
+                    msgInfo.setDataUri(FileUtil.getUriFromPath(videoEle.getVideoPath()));
+                } else {
+                    TIMVideo video = videoEle.getVideoInfo();
+                    final String videoPath = Constants.VIDEO_DOWNLOAD_DIR + video.getUuid();
+                    Uri uri = Uri.parse(videoPath);
+                    msgInfo.setDataUri(uri);
+                    TIMSnapshot snapshot = videoEle.getSnapshotInfo();
+                    msgInfo.setImgWidth((int) snapshot.getWidth());
+                    msgInfo.setImgHeight((int) snapshot.getHeight());
+                    final String snapPath = Constants.IMAGE_DOWNLOAD_DIR + snapshot.getUuid();
+                    //判断快照是否存在,不存在自动下载
+                    if (new File(snapPath).exists()) {
+                        msgInfo.setDataPath(snapPath);
+                    }
+                }
+
+                msgInfo.setExtra("[视频]");
+            } else if (type == TIMElemType.File) {
+                TIMFileElem fileElem = (TIMFileElem) ele;
+                String filename = fileElem.getUuid();
+                if (TextUtils.isEmpty(filename)) {
+                    filename = System.currentTimeMillis() + fileElem.getFileName();
+                }
+                final String path = Constants.FILE_DOWNLOAD_DIR + filename;
+                File file = new File(path);
+                if (file.exists()) {
+                    if (msgInfo.isSelf()) {
+                        msgInfo.setStatus(MessageInfo.MSG_STATUS_SEND_SUCCESS);
+                    } else {
+                        msgInfo.setStatus(MessageInfo.MSG_STATUS_DOWNLOADED);
+                    }
+                    msgInfo.setDataPath(path);
+                } else {
+                    if (msgInfo.isSelf()) {
+                        if (TextUtils.isEmpty(fileElem.getPath())) {
+                            msgInfo.setStatus(MessageInfo.MSG_STATUS_UN_DOWNLOAD);
+                            msgInfo.setDataPath(path);
+                        } else {
+                            file = new File(fileElem.getPath());
+                            if (file.exists()) {
+                                msgInfo.setStatus(MessageInfo.MSG_STATUS_SEND_SUCCESS);
+                                msgInfo.setDataPath(fileElem.getPath());
+                            } else {
+                                msgInfo.setStatus(MessageInfo.MSG_STATUS_UN_DOWNLOAD);
+                                msgInfo.setDataPath(path);
+                            }
+                        }
+                    } else {
+                        msgInfo.setStatus(MessageInfo.MSG_STATUS_UN_DOWNLOAD);
+                        msgInfo.setDataPath(path);
+                    }
+                }
+                msgInfo.setExtra("[文件]");
+            }
+            msgInfo.setMsgType(TIMElemType2MessageInfoType(type));
+        }
+
+        if (timMessage.status() == TIMMessageStatus.HasRevoked) {
+            msgInfo.setStatus(MessageInfo.MSG_STATUS_REVOKE);
+            msgInfo.setMsgType(MessageInfo.MSG_STATUS_REVOKE);
+            if (msgInfo.isSelf()) {
+                msgInfo.setExtra("您撤回了一条消息");
+            } else if (msgInfo.isGroup()) {
+                String message = Constants.covert2HTMLString(msgInfo.getFromUser());
+                msgInfo.setExtra(message + "撤回了一条消息");
+            } else {
+                msgInfo.setExtra("对方撤回了一条消息");
+            }
+        } else {
+            if (msgInfo.isSelf()) {
+                if (timMessage.status() == TIMMessageStatus.SendFail) {
+                    msgInfo.setStatus(MessageInfo.MSG_STATUS_SEND_FAIL);
+                } else if (timMessage.status() == TIMMessageStatus.SendSucc) {
+                    msgInfo.setStatus(MessageInfo.MSG_STATUS_SEND_SUCCESS);
+                } else if (timMessage.status() == TIMMessageStatus.Sending) {
+                    msgInfo.setStatus(MessageInfo.MSG_STATUS_SENDING);
+                }
+            }
+        }
+        return msgInfo;
+    }
 
     private static int TIMElemType2MessageInfoType(TIMElemType type) {
         switch (type) {

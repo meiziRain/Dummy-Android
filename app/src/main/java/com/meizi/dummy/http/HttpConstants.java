@@ -10,7 +10,7 @@ import okhttp3.MediaType;
  */
 public class HttpConstants {
     public final static MediaType MEDIA_TYPE_JSON = MediaType.parse("application/json; charset=utf-8");
-    public final static String BASE_URL = "http://192.168.43.181:8086";
+    public final static String BASE_URL = "http://192.168.1.113:8086";
     // user login
     public final static String USER_LOGIN_URL = BASE_URL + "/auth/login";
 

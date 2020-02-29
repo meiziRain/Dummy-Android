@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--好看的颜色-->
+<!--  粉 light: #ffd9e6  darker: #edc7d4 -->
+<!--  青 light: #adf7d3  darker: #9ee8c4 -->
+<!--  青 light: #adf6ff  darker: #9ee7f0 -->
+
 <resources>
 
     <!--  此处需要有actionBar,原因是系统生成的navigationBar需要设置，之前此处设置noActionBar，直接导致App崩溃不报错。-->
@@ -49,19 +55,19 @@
 
     <!-- overflow弹出菜单内部的样式 -->
     <style name="Base.Widget.AppCompat.ListView.DropDown" parent="android:Widget.ListView">
-<!--        &lt;!&ndash; overflow弹出菜单内部，每个Item之间的分割线 &ndash;&gt;-->
-<!--        <item name="android:divider">@drawable/ic_divider</item>-->
-<!--        &lt;!&ndash; overflow弹出菜单内部，每个Item的selector &ndash;&gt;-->
-<!--        <item name="android:listSelector">@drawable/actionbar_item_selector</item>-->
+        <!--        &lt;!&ndash; overflow弹出菜单内部，每个Item之间的分割线 &ndash;&gt;-->
+        <!--        <item name="android:divider">@drawable/ic_divider</item>-->
+        <!--        &lt;!&ndash; overflow弹出菜单内部，每个Item的selector &ndash;&gt;-->
+        <!--        <item name="android:listSelector">@drawable/actionbar_item_selector</item>-->
     </style>
 
     <!-- overflow出菜单内部的每个Item的字体颜色与大小 -->
-<!--    无效果，但是出来了分割线-->
-<!--    <style name="Base.TextAppearance.AppCompat.Menu">-->
-<!--        <item name="android:textSize">16sp</item>-->
-<!--        <item name="android:textColor">@color/red</item>-->
-<!--        <item name="android:textAlignment">center</item>-->
-<!--    </style>-->
+    <!--    无效果，但是出来了分割线-->
+    <!--    <style name="Base.TextAppearance.AppCompat.Menu">-->
+    <!--        <item name="android:textSize">16sp</item>-->
+    <!--        <item name="android:textColor">@color/red</item>-->
+    <!--        <item name="android:textAlignment">center</item>-->
+    <!--    </style>-->
 
     <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar">
         <!-- 让status bar透明，相当于statusBarColor=transparent + windowOverscan=true -->

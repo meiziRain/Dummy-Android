@@ -22,12 +22,13 @@ public class Constants {
 
 
     public static String APP_DIR = File.separator + "mnt"
-            + File.separator + "sdcard" + File.separator + "dummy" + File.separator;
+            + File.separator + "sdcard" + File.separator + "dummy";
 
     // 用户没有上传到Dummy后台的录音
-    public static String RECORD_DIR = APP_DIR + "record" + File.separator;
+    public static String RECORD_DIR = APP_DIR + File.separator + "record" + File.separator;
     // 用户保存的需要用来接龙的录音
     public static String RECORD_Star_DIR = APP_DIR + File.separator + "record" + File.separator + "star" + File.separator;
+    public static String RECORD_DOWNLOAD_DIR = APP_DIR + File.separator + "record/download/";
     // 录音最大时长
     public final static int DEFAULT_AUDIO_RECORD_MAX_TIME = 60;
 

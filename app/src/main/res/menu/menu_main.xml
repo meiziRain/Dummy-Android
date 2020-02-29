@@ -6,12 +6,21 @@
 
 
     <item
-        android:id="@+id/action_scan"
-        android:icon="@drawable/ic_check_circle"
+        android:id="@+id/add_relationship"
+        android:icon="@drawable/ic_user"
         android:orderInCategory="100"
-        android:title="@string/action_settings"
+        android:title="Add"
         android:textSize="16sp"
         app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:orderInCategory="100"
+        android:title="Search"
+        android:textSize="16sp"
+        app:showAsAction="always" />
+
 
 
 

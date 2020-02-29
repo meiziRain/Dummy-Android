@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/navigation_conversation"
         android:name="com.meizi.dummy.ui.conversation.ConversationFragment"
-        android:label="@string/title_home"
+        android:label="Dummy"
         tools:layout="@layout/fragment_conversation" />
 
     <fragment

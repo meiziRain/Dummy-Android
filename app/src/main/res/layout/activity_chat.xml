@@ -9,15 +9,20 @@
     android:orientation="vertical"
     tools:context="com.meizi.dummy.ChatActivity">
 
-    <!--    通过设置权重使RecyclerView占据剩余部分-->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/chat_list"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swiperefreshlayout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:overScrollMode="never">
+        android:layout_height="wrap_content">
+        <!--    通过设置权重使RecyclerView占据剩余部分-->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chat_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:overScrollMode="never">
 
-    </androidx.recyclerview.widget.RecyclerView>
+        </androidx.recyclerview.widget.RecyclerView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.dewarder.holdinglibrary.HoldingButtonLayout
         android:id="@+id/input_holder"

@@ -7,22 +7,22 @@ package com.meizi.dummy.ui.chat;
  * @Created by jion
  */
 
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.meizi.dummy.R;
 import com.meizi.dummy.component.AudioPlayer;
-import com.meizi.dummy.ui.conversation.base.ConversationInfo;
-import com.meizi.dummy.ui.conversation.base.MessageInfo;
-import com.meizi.dummy.utils.ToastUtil;
+import com.meizi.dummy.ui.base.ConversationInfo;
+import com.meizi.dummy.ui.base.MessageInfo;
 
 import java.util.List;
 
 import androidx.recyclerview.widget.RecyclerView;
+import cn.hutool.core.date.DateUtil;
 
 public class MsgAdapter extends RecyclerView.Adapter<MsgAdapter.ViewHolder> {
     private List<MessageInfo> mMsgList;
@@ -48,6 +48,15 @@ public class MsgAdapter extends RecyclerView.Adapter<MsgAdapter.ViewHolder> {
         mMsgList = msgList;
     }
 
+
+    public MessageInfo getItem(int position) {
+        if (position == 0 || mMsgList.size() == 0) {
+            return null;
+        }
+        MessageInfo info = mMsgList.get(position - 1);
+        return info;
+    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.chat_item, parent, false);
@@ -58,7 +67,7 @@ public class MsgAdapter extends RecyclerView.Adapter<MsgAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         MessageInfo messageInfo = mMsgList.get(position);
-        AudioPlayer audioPlayer=AudioPlayer.getInstance();
+        AudioPlayer audioPlayer = AudioPlayer.getInstance();
         holder.leftMsg.setOnClickListener(view -> {
             System.out.println("Sign:click left Msg");
             audioPlayer.startPlay(messageInfo.getDataPath(), new AudioPlayer.Callback() {
@@ -80,12 +89,12 @@ public class MsgAdapter extends RecyclerView.Adapter<MsgAdapter.ViewHolder> {
         if (!messageInfo.isSelf()) {
             holder.leftLayout.setVisibility(View.VISIBLE);
             holder.rightLayout.setVisibility(View.GONE);
-            holder.leftMsg.setText("left Btn");
+            holder.leftMsg.setText(DateUtil.now());
 
         } else {
             holder.rightLayout.setVisibility(View.VISIBLE);
             holder.leftLayout.setVisibility(View.GONE);
-            holder.rihgtMsg.setText("Right Btn");
+            holder.rihgtMsg.setText(DateUtil.now());
         }
     }
 

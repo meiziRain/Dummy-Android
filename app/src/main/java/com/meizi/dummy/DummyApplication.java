@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.meizi.dummy.utils.BackgroundTasks;
 import com.tencent.imsdk.TIMCallBack;
 import com.tencent.imsdk.TIMConnListener;
 import com.tencent.imsdk.TIMConversation;
@@ -16,6 +17,12 @@ import com.tencent.imsdk.TIMRefreshListener;
 import com.tencent.imsdk.TIMSdkConfig;
 import com.tencent.imsdk.TIMUserConfig;
 import com.tencent.imsdk.TIMUserStatusListener;
+import com.tencent.qcloud.tim.uikit.TUIKit;
+import com.tencent.qcloud.tim.uikit.config.CustomFaceConfig;
+import com.tencent.qcloud.tim.uikit.config.GeneralConfig;
+import com.tencent.qcloud.tim.uikit.config.TUIKitConfigs;
+
+import org.litepal.LitePal;
 
 import java.util.List;
 
@@ -55,7 +62,22 @@ public class DummyApplication extends Application {
         super.onCreate();
         instance = this;
         DummyKit.init(getApplicationContext());
+        BackgroundTasks.initInstance();
+
+        //
+
+        TUIKitConfigs configs = TUIKit.getConfigs();
+        configs.setSdkConfig(new TIMSdkConfig(SDKAPPID));
+        configs.setCustomFaceConfig(new CustomFaceConfig());
+        configs.setGeneralConfig(new GeneralConfig());
+        TUIKit.init(this, SDKAPPID, configs);
+        //
+        LitePal.initialize(this);
     }
 
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
 
+    }
 }

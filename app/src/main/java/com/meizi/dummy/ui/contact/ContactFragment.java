@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -20,17 +21,34 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
+import butterknife.BindView;
+import butterknife.BindViews;
+import butterknife.ButterKnife;
 
 import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
 import com.meizi.dummy.R;
+import com.meizi.dummy.ui.add.SearchActivity;
+import com.meizi.dummy.utils.ToastUtil;
+import com.ogaclejapan.smarttablayout.SmartTabLayout;
+import com.ogaclejapan.smarttablayout.utils.v4.FragmentPagerItemAdapter;
+import com.ogaclejapan.smarttablayout.utils.v4.FragmentPagerItems;
+import com.wyt.searchbox.SearchFragment;
+import com.wyt.searchbox.custom.IOnSearchClickListener;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ContactFragment extends Fragment {
+
+    public SearchFragment searchFragment;
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -39,16 +57,36 @@ public class ContactFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_contact, container, false);
 
 
+        searchFragment = SearchFragment.newInstance();
+        searchFragment.setOnSearchClickListener(keyword -> {
+            //这里处理逻辑
+            System.out.println("OnSearchClick");
+        });
+
+
+        // 好友/群组 TAB
+        FragmentPagerItemAdapter adapter = new FragmentPagerItemAdapter(
+                getParentFragmentManager(), FragmentPagerItems.with(getContext())
+                .add("好友", FriendFragment.class)
+                .add("群聊", GroupFragment.class)
+                .create());
+        ViewPager viewPager = root.findViewById(R.id.viewpager);
+        viewPager.setAdapter(adapter);
+        SmartTabLayout viewPagerTab = root.findViewById(R.id.viewpagertab);
+        viewPagerTab.setViewPager(viewPager);
+
+
+
         // 使用了这个方法以后关于menu的回调函数才会被调用
         setHasOptionsMenu(true);
         return root;
     }
 
+
     @Override
     public void onStart() {
         super.onStart();
     }
-
 
 
     @Override
@@ -79,6 +117,15 @@ public class ContactFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_search://点击搜索
+                searchFragment.showFragment(getParentFragmentManager(), SearchFragment.TAG);
+                break;
+            case R.id.add_relationship:
+                Intent intend = new Intent(getContext(), SearchActivity.class);
+                startActivity(intend);
+                break;
+        }
         return super.onOptionsItemSelected(item);
     }
 

@@ -1,8 +1,4 @@
-package com.meizi.dummy.ui.conversation.base;
-
-import com.tencent.imsdk.TIMConversation;
-
-import java.util.List;
+package com.meizi.dummy.ui.base;
 
 /**
  * @Classname ConversationRefreshListener

@@ -1,4 +1,4 @@
-package com.meizi.dummy.ui.conversation.base;
+package com.meizi.dummy.ui.base;
 
 import android.graphics.Color;
 import android.view.View;
@@ -8,12 +8,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.meizi.dummy.DummyKit;
-import com.meizi.dummy.MainActivity;
 import com.meizi.dummy.R;
-import com.meizi.dummy.ui.conversation.ConversationFragment;
-import com.meizi.dummy.ui.conversation.base.ConversationInfo;
+import com.meizi.dummy.ui.base.ConversationInfo;
 import com.simple.bubbleviewlibrary.BubbleView;
-import com.tencent.imsdk.conversation.Conversation;
 
 import java.util.ArrayList;
 
@@ -73,6 +70,8 @@ public class ConversationAdapter extends BaseAdapter {
             holder.bubbleView.setText(String.valueOf(item.getUnRead()));
             holder.bubbleView.setCircleColor(Color.RED);
             holder.bubbleView.bringToFront();
+        } else {
+            holder.bubbleView.setVisibility(View.GONE);
         }
         return convertView;
     }
